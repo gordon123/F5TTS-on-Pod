@@ -42,10 +42,7 @@ pip install torch==2.3.0+cu118 torchaudio==2.3.0+cu118 --extra-index-url https:/
 - สำหรับเสียงต้นแบบ ควรใช้ความยาวไม่เกิน 10 วินาที ถ้าเป็นไปได้ห้ามมีเสียงรบกวน.
   
 # สำหรับการ Train เสียง และ Finetune
-ใช้งานบน Google Colab [Finetune](https://colab.research.google.com/drive/1jwzw4Jn1qF8-F0o3TND68hLHdIqqgYEe?usp=sharing) หรือ 
-
-ติดตั้ง
-
+### ติดตั้ง
 ```sh
   cd F5TTS-on-Pod
   pip install -e .
@@ -56,7 +53,7 @@ pip install torch==2.3.0+cu118 torchaudio==2.3.0+cu118 --extra-index-url https:/
   f5-tts_finetune-gradio --share
 ```
 
-# อ้างอิง
+### อ้างอิง
 
 - [F5-TTS](https://github.com/SWivid/F5-TTS)
 - Thai Dataset : [Porameht/processed-voice-th-169k](https://huggingface.co/datasets/Porameht/processed-voice-th-169k)
