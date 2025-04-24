@@ -1,4 +1,4 @@
-# F5-TTS: A Fairytaler that Fakes Fluent and Faithful Speech with Flow Matching. Support For Thai language.
+# F5-TTS: A Fairytaler that Fakes Fluent and Faithful Speech with Flow Matching. ภาษาไทย
 
 [![python](https://img.shields.io/badge/Python-3.10-brightgreen)](https://github.com/SWivid/F5-TTS)
 [![arXiv](https://img.shields.io/badge/arXiv-2410.06885-b31b1b.svg?logo=arXiv)](https://arxiv.org/abs/2410.06885)
@@ -12,6 +12,7 @@
 เครื่องมือเปลี่ยนข้อความเป็นคำพูดภาษาไทย Zero-shot TTS ด้วยโมเดล F5-TTS <br>
 โมเดล Finetune : [VIZINTZOR/F5-TTS-THAI](https://huggingface.co/VIZINTZOR/F5-TTS-THAI) <br>
  - ชุดข้อมุลในการเทรน : [Porameht/processed-voice-th-169k](https://huggingface.co/datasets/Porameht/processed-voice-th-169k)
+ - โค้ดจาก Github สำหรับใครที่ใช้บน Google colab, local computer https://github.com/VYNCX/F5-TTS-THAI
  - จำนวน 150,000 เสียง ประมาณ 165 ชั่วโมง
  - โมเดล last steps : 500,000
  - การอ่านข้อความยาวๆ หรือบางคำ ยังไม่ถูกต้อง
@@ -40,37 +41,20 @@ pip install torch==2.3.0+cu118 torchaudio==2.3.0+cu118 --extra-index-url https:/
 - สำหรับ ref_text หรือ ข้อความตันฉบับ แนะนำให้ใช้เป็นภาษาไทยหรือคำอ่านภาษาไทยสำหรับเสียงภาษาอื่น เช่น Good Morning > กู้ดมอร์นิ่ง.
 - สำหรับเสียงต้นแบบ ควรใช้ความยาวไม่เกิน 10 วินาที ถ้าเป็นไปได้ห้ามมีเสียงรบกวน.
   
-# ฝึกอบรม และ Finetune
+# สำหรับการ Train เสียง และ Finetune
 ใช้งานบน Google Colab [Finetune](https://colab.research.google.com/drive/1jwzw4Jn1qF8-F0o3TND68hLHdIqqgYEe?usp=sharing) หรือ 
 
 ติดตั้ง
 
 ```sh
-  cd F5-TTS-THAI
+  cd F5TTS-on-Pod
   pip install -e .
 ```
 
 เปิด Gradio
 ```sh
-  f5-tts_finetune-gradio
+  f5-tts_finetune-gradio --share
 ```
-
-# ตัวอย่างเสียง
-
-- เสียงต้นฉบับ
-- ข้อความ : ได้รับข่าวคราวของเราที่จะหาที่มันเป็นไปที่จะจัดขึ้น.
-  
-https://github.com/user-attachments/assets/003c8a54-6f75-4456-907d-d28897e4c393
-
-- เสียงที่สร้าง 1(ข้อความเดียวกัน)
-- ข้อความ : ได้รับข่าวคราวของเราที่จะหาที่มันเป็นไปที่จะจัดขึ้น.
-   
-https://github.com/user-attachments/assets/926829f2-8d56-4f0f-8e2e-d73cfcecc511
-
-- เสียงที่สร้าง 2(ข้อความใหม่)
-- ข้อความ : ฉันชอบฟังเพลงขณะขับรถ เพราะช่วยให้รู้สึกผ่อนคลาย
-
-https://github.com/user-attachments/assets/06d6e94b-5f83-4d69-99d1-ad19caa9792b
 
 # อ้างอิง
 
