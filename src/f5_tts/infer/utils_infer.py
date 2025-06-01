@@ -1,8 +1,4 @@
-"""
-utils_infer.py
-Version: 1.1.0
-ปรับปรุง chunk_text ให้เคารพ newline ก่อนแล้วค่อยแบ่งตาม max_chars
-"""
+# utils_infer.py
 
 # A unified script for inference process
 # Make adjustments inside functions, and consider both gradio and cli scripts if need to change func output format
@@ -69,53 +65,42 @@ fix_duration = None
 
 # -----------------------------------------
 
-# chunk text into smaller pieces
-
 def chunk_text(text, max_chars=200):
     """
-    Splits the input text into chunks, respecting newline first, then splitting by max_chars if a line is too long.
-
-    1. Split by '\n' to get individual lines.
-    2. If a line's byte length <= max_chars, take it as one chunk.
-    3. If longer, split that line using <unk> logic as before.
+    Splits the input text into chunks by breaking at spaces, creating visually balanced chunks.
 
     Args:
-        text (str): Input text possibly containing newline characters.
-        max_chars (int): Approximate maximum byte length per chunk in UTF-8.
+        text (str): The text to be split.
+        max_chars (int): Approximate maximum number of bytes per chunk in UTF-8 encoding.
 
     Returns:
         List[str]: A list of text chunks.
     """
-    all_chunks = []
-
-    # Split by newline
-    lines = text.split("\n")
-    for line in lines:
-        line = line.strip()
-        if not line:
+    chunks = []
+    current_chunk = ""
+    # Replace spaces with <unk> if desired, then split on <unk> or spaces
+    text = text.replace(" ", "<unk>")
+    segments = re.split(r"(<unk>|\s+)", text)
+    
+    for segment in segments:
+        if not segment or segment in ("<unk>", " "):
             continue
-        # If byte-length of line <= max_chars, keep it whole
-        if len(line.encode("utf-8")) <= max_chars:
-            all_chunks.append(line)
+        # Check the byte length for UTF-8 encoding
+        if len((current_chunk + segment).encode("utf-8")) <= max_chars:
+            current_chunk += segment
+            current_chunk += " "  # Add space after each segment for readability
         else:
-            # Else split that line by spaces (using <unk> trick)
-            current_chunk = ""
-            temp = line.replace(" ", "<unk>")
-            segments = re.split(r"(<unk>|\s+)", temp)
-            for segment in segments:
-                if not segment or segment in ("<unk>", " "):
-                    continue
-                candidate = current_chunk + segment
-                if len(candidate.encode("utf-8")) <= max_chars:
-                    current_chunk = candidate + " "
-                else:
-                    if current_chunk:
-                        all_chunks.append(current_chunk.strip().replace("<unk>", " "))
-                    current_chunk = segment + " "
             if current_chunk:
-                all_chunks.append(current_chunk.strip().replace("<unk>", " "))
+                chunks.append(current_chunk.strip())
+            current_chunk = segment + " "
 
-    return all_chunks
+    if current_chunk:
+        chunks.append(current_chunk.strip())
+
+    # Replace <unk> back with spaces in the final output
+    chunks = [chunk.replace("<unk>", " ") for chunk in chunks]
+    
+    return chunks
 
 
 # load vocoder
@@ -327,7 +312,7 @@ def preprocess_ref_audio_text(ref_audio_orig, ref_text, clip_short=True, show_in
                     break
                 non_silent_wave += non_silent_seg
 
-            # 2. try to find short silence for clipping if noise_detected
+            # 2. try to find short silence for clipping if 1. failed
             if len(non_silent_wave) > 15000:
                 non_silent_segs = silence.split_on_silence(
                     aseg, min_silence_len=100, silence_thresh=-40, keep_silence=1000, seek_step=10
@@ -339,12 +324,12 @@ def preprocess_ref_audio_text(ref_audio_orig, ref_text, clip_short=True, show_in
                         break
                     non_silent_wave += non_silent_seg
 
-            aseg = non_silent_wave
-
             # 3. if no proper silence found for clipping
-            if len(aseg) > 15000:
-                aseg = aseg[:15000]
+            if len(non_silent_wave) > 15000:
+                non_silent_wave = non_silent_wave[:15000]
                 show_info("Audio is over 15s, clipping short. (3)")
+
+            aseg = non_silent_wave
 
         aseg = remove_silence_edges(aseg) + AudioSegment.silent(duration=50)
         aseg.export(f.name, format="wav")
@@ -381,9 +366,7 @@ def preprocess_ref_audio_text(ref_audio_orig, ref_text, clip_short=True, show_in
     return ref_audio, ref_text
 
 
-# infer process: chunk text -> infer batches [i.e. infer_batch_process()]
-
-
+# infer process: split text respecting newline -> infer batches
 def infer_process(
     ref_audio,
     ref_text,
@@ -403,17 +386,34 @@ def infer_process(
     device=device,
     set_max_chars=250
 ):
-    # Split the input text into batches
-    audio, sr = torchaudio.load(ref_audio)
-    gen_text_batches = chunk_text(gen_text, max_chars=set_max_chars)
-    for i, gen_text in enumerate(gen_text_batches):
-        print(f"gen_text {i}", gen_text)
+    # Split the input text into batches, respecting newline first
+    #  - ถ้า gen_text มี newline ให้แยกตามบรรทัดก่อน
+    #  - แต่ละบรรทัดถ้ายาวกว่า set_max_chars ก็ใช้ chunk_text แบ่งซ้ำ
+
+    lines = gen_text.split("\n")
+    gen_text_batches = []
+
+    for line in lines:
+        line = line.strip()
+        if not line:
+            continue
+        # ถ้ายังสั้นกว่า set_max_chars ก็ไม่ต้อง chunk ต่อ
+        if len(line.encode("utf-8")) <= set_max_chars:
+            gen_text_batches.append(line)
+        else:
+            # ถ้าต้อง chunk ต่อ ก็เรียก chunk_text ของเดิม
+            subchunks = chunk_text(line, max_chars=set_max_chars)
+            gen_text_batches.extend(subchunks)
+
+    for i, batch_text in enumerate(gen_text_batches):
+        print(f"gen_text {i}", batch_text)
     print("\n")
 
     show_info(f"Generating audio in {len(gen_text_batches)} batches...")
     return next(
         infer_batch_process(
-            (audio, sr),
+            (torch.load(ref_audio)[0],  # ต้องส่ง waveform tensor + sr เข้า infer_batch_process
+             torchaudio.info(ref_audio).sample_rate),
             ref_text,
             gen_text_batches,
             model_obj,
@@ -433,8 +433,6 @@ def infer_process(
 
 
 # infer batches
-
-
 def infer_batch_process(
     ref_audio,
     ref_text,
@@ -471,7 +469,6 @@ def infer_batch_process(
 
     if len(ref_text[-1].encode("utf-8")) == 1:
         ref_text = ref_text + " "
-
 
     def process_batch(gen_text):
         local_speed = speed
@@ -583,8 +580,6 @@ def infer_batch_process(
 
 
 # remove silence from generated wav
-
-
 def remove_silence_for_generated_wav(filename):
     aseg = AudioSegment.from_file(filename)
     non_silent_segs = silence.split_on_silence(
@@ -598,8 +593,6 @@ def remove_silence_for_generated_wav(filename):
 
 
 # save spectrogram
-
-
 def save_spectrogram(spectrogram, path):
     plt.figure(figsize=(12, 4))
     plt.imshow(spectrogram, origin="lower", aspect="auto")
