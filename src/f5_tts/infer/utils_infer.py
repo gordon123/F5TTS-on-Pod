@@ -390,7 +390,7 @@ def infer_process(
     #  - ถ้า gen_text มี newline ให้แยกตามบรรทัดก่อน
     #  - แต่ละบรรทัดถ้ายาวกว่า set_max_chars ก็ใช้ chunk_text แบ่งซ้ำ
 
-    lines = gen_text.split("\n")
+    lines = gen_text.splitlines()
     gen_text_batches = []
 
     for line in lines:
