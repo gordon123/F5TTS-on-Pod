@@ -69,9 +69,7 @@ fix_duration = None
 
 # -----------------------------------------
 
-
 # chunk text into smaller pieces
-
 
 def chunk_text(text, max_chars=200):
     """
