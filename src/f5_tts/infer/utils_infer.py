@@ -1,7 +1,7 @@
 # utils_infer.py
 
 # A unified script for the inference process.
-# Make adjustments inside functions; consider both gradio and CLI scripts if you need to change the output format.
+# Make adjustments inside functions; consider both gradio and CLI scripts if you need to change func output format.
 
 import os
 import sys
@@ -180,7 +180,7 @@ def initialize_asr_pipeline(device: str = device, dtype=None):
 
 def transcribe(ref_audio: str, language: str = None) -> str:
     """
-    Run Whisper ASR on `ref_audio` if no custom ref_text was given.
+    Run Whisper ASR on `ref_audio` if no ref_text was given.
     """
     global asr_pipe
     if asr_pipe is None:
@@ -352,7 +352,7 @@ def preprocess_ref_audio_text(
             aseg = non_silent_wave
 
         aseg = remove_silence_edges(aseg) + AudioSegment.silent(duration=50)
-        asegur.export(f.name, format="wav")
+        aseg.export(f.name, format="wav")
         ref_audio = f.name
 
     # Compute MD5 hash
